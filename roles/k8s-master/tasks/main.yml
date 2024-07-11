@@ -1,0 +1,45 @@
+- name: Destroy previous k8s cluster
+  command: kubeadm reset -f
+
+- name: Remove containerd config.toml
+  file:
+    path: /etc/containerd/config.toml
+    state: absent
+  become: true
+
+- name: restart containerd service 
+  shell: systemctl restart containerd
+  become: true
+
+- name: Initialize k8s cluster
+  command: kubeadm init
+  become: true
+  register: kubeadm_init_output
+
+- name: Create file with kubeadm output
+  copy:
+    content: "{{ kubeadm_init_output.stdout }}"
+    dest: /root/kubeadminit
+
+- name: Prepare kubejoin script
+  shell: tail -2 /root/kubeadminit > /root/kubejoin.sh
+
+- name: Get kubejoin script
+  fetch: 
+    src: /root/kubejoin.sh
+    dest: ./join
+
+- name: Organize files
+  shell: |
+        cp join/{{ inventory_hostname }}/root/kubejoin.sh join/  
+        rm -fr join/{{ inventory_hostname }}
+  delegate_to: localhost
+  become: no
+
+- name: Export kubeconfig
+  shell: export KUBECONFIG=/etc/kubernetes/admin.conf
+
+- name: Install Pod network add-on
+  command: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf

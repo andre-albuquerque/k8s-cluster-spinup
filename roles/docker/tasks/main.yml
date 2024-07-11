@@ -1,0 +1,36 @@
+- name: Install docker pre-reqs
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+  loop: "{{ docker_prereqs_packages }}"
+
+- name: Create directory keyrings
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Add gpg key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Get system architecture
+  command: dpkg --print-architecture
+  register: arch_output
+
+- name: Get version codename
+  shell: . /etc/os-release && echo $VERSION_CODENAME
+  become: true
+  register: codename_output
+
+- name: Add docker repository
+  apt_repository:
+    repo: "deb [arch={{ arch_output.stdout }}] https://download.docker.com/linux/ubuntu {{ codename_output.stdout }} stable"
+    mode: '0755'
+    update_cache: true
+
+- name: Install docker packages
+  apt:
+    name: "{{ item }}"
+  loop: "{{ docker_packages }}"

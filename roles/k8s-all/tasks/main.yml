@@ -1,0 +1,17 @@
+- name: Get Kubernetes package key
+  shell: curl -fsSL {{ k8s_url_apt_key }} | gpg --dearmor -o kubernetes-apt-keyring.gpg && mv -f kubernetes-apt-keyring.gpg {{ k8s_gpg_path }}
+    
+- name: Add Kubernetes repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by={{ k8s_gpg_path }}] {{ k8s_repository }} /"
+    filename: kubernetes
+    state: present
+    update_cache: true
+  
+- name: Install Kubernetes packages
+  apt:
+    name: "{{ item }}"
+    state: present
+    force: true
+    install_recommends: no
+  loop: "{{ k8s_packages }}"

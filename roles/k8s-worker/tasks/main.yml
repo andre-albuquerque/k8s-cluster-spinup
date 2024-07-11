@@ -1,0 +1,18 @@
+- name: Copy join script to nodes
+  copy: 
+    src: ./join/kubejoin.sh
+    dest: /opt/kubejoin.sh
+    mode: '0700'
+
+- name: Remove containerd config.toml
+  file:
+    path: /etc/containerd/config.toml
+    state: absent
+  become: true
+  
+- name: restart containerd service 
+  shell: systemctl restart containerd
+  become: true
+
+- name: Run join script on nodes
+  shell: /opt/kubejoin.sh
