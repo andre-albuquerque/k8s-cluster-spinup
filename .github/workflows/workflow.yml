@@ -17,7 +17,6 @@ jobs:
         TF_VAR_instance_type: "${{ secrets.TF_VAR_instance_type }}"
         TF_VAR_region: "${{ secrets.TF_VAR_region }}"
     steps:
-
       - name: Check out the repository
         uses: actions/checkout@v2
 
@@ -28,3 +27,9 @@ jobs:
       - name: Apply Terraform
         run: terraform apply --auto-approve
         working-directory: .
+
+      - name: Save private key in file on ssh folder
+        run: mkdir -p ~/.ssh/ && echo "$PRIVATE_KEY" > ~/.ssh/id_rsa && unset PRIVATE_KEY && chmod 600 ~/.ssh/id_rsa
+
+      - name: Apply Ansible playbook
+        run: ansible-playbook -i ec2.py -u ubuntu --private-key ~/.ssh/id_rsa --ssh-common-args='-o StrictHostKeyChecking=no' site.yml
