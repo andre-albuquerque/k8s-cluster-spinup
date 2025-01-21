@@ -28,8 +28,9 @@ jobs:
         run: terraform apply --auto-approve
         working-directory: .
 
+      - name: Generate Ansible Inventory
+        run: terraform output -json ansible_inventory > inventory.json
+        working-directory: .
+
       - name: Save private key in file on ssh folder
         run: mkdir -p ~/.ssh/ && echo "$PRIVATE_KEY" > ~/.ssh/id_rsa && unset PRIVATE_KEY && chmod 600 ~/.ssh/id_rsa
-
-      - name: Apply Ansible playbook
-        run: ansible-playbook -i ec2.py -u ubuntu --private-key ~/.ssh/id_rsa --ssh-common-args='-o StrictHostKeyChecking=no' site.yml
